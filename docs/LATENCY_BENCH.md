@@ -1,7 +1,7 @@
 # Latency Bench
 
 - 日期：2026-04-07
-- 命令：`swift run shuo latency-bench --runs 3 --chunk-ms 10,20,40`
+- 命令：`swift run shuo-bench --runs 3 --chunk-ms 10,20,40`
 - 语音：`Tingting`
 - 文本：`现在我们直接测首字延迟，看看哪个参数最快。`
 - 原始结果：`docs/latency-bench/latest.json`

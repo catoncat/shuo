@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.1.2 - 2026-04-07
+
+- 把 latency bench 拆成独立 `shuo-bench` 可执行工具
+- 正式 `shuo` app / release bundle 不再包含 latency bench 入口
+- release 构建只编译 `shuo`，避免把 bench 一起打进正式产物
+- release 版本号更新为 `0.1.2`
+
 ## v0.1.1 - 2026-04-07
 
 - 增加开始/结束提示音选择

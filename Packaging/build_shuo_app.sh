@@ -3,7 +3,7 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 APP_NAME="Shuo"
-APP_VERSION="${SHUO_VERSION:-0.1.1}"
+APP_VERSION="${SHUO_VERSION:-0.1.2}"
 BUILD_NUMBER="${SHUO_BUILD_NUMBER:-1}"
 APP_BUNDLE="$ROOT/dist/${APP_NAME}.app"
 CONTENTS="$APP_BUNDLE/Contents"
@@ -20,7 +20,7 @@ rm -rf "$APP_BUNDLE"
 mkdir -p "$MACOS" "$BIN_DIR" "$CONFIG_DIR" "$SOUNDS_DIR"
 
 pushd "$ROOT" >/dev/null
-swift build -c release
+swift build -c release --product shuo
 cargo build --release --manifest-path Engine/shuo-engine/Cargo.toml
 popd >/dev/null
 

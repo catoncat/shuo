@@ -310,7 +310,7 @@ func runLatencyBench(options: LatencyBenchOptions) throws {
 
     let summaryData = try JSONEncoder.prettySorted.encode(summary)
     let latestURL = docsDirURL.appendingPathComponent("latest.json")
-    try summaryData.write(to: latestURL, options: .atomic)
+    try summaryData.write(to: latestURL, options: Data.WritingOptions.atomic)
     print(String(decoding: summaryData, as: UTF8.self))
 }
 

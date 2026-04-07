@@ -13,16 +13,6 @@ mod legacy_transport;
 mod state;
 mod stdio_engine;
 
-#[cfg(not(feature = "latency-bench"))]
-mod benchmark {
-    use crate::Args;
-
-    pub(crate) fn run_benchmark_replay(_args: Args) {
-        eprintln!("benchmark mode requires cargo feature: latency-bench");
-        std::process::exit(2);
-    }
-}
-
 use clap::ValueEnum;
 use stdio_engine::run_stdio_engine;
 const HELPER_VERSION: &str = concat!(
@@ -91,15 +81,19 @@ struct Args {
     #[arg(long, default_value_t = 1.0, hide = true)]
     ui_scale: f64,
 
+    #[cfg(feature = "latency-bench")]
     #[arg(long)]
     benchmark_input_wav: Option<String>,
 
+    #[cfg(feature = "latency-bench")]
     #[arg(long, default_value_t = 20)]
     benchmark_chunk_ms: u64,
 
+    #[cfg(feature = "latency-bench")]
     #[arg(long, default_value_t = true)]
     benchmark_warmup: bool,
 
+    #[cfg(feature = "latency-bench")]
     #[arg(long, default_value_t = 10.0)]
     benchmark_timeout_secs: f64,
 }
@@ -107,6 +101,7 @@ struct Args {
 #[derive(Copy, Clone, Debug, Eq, PartialEq, ValueEnum)]
 enum RunMode {
     StdioEngine,
+    #[cfg(feature = "latency-bench")]
     BenchmarkReplay,
 }
 
@@ -158,6 +153,7 @@ fn main() {
     let args = Args::parse();
     match args.mode {
         RunMode::StdioEngine => run_stdio_engine(args),
+        #[cfg(feature = "latency-bench")]
         RunMode::BenchmarkReplay => benchmark::run_benchmark_replay(args),
     }
 }

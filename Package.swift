@@ -9,11 +9,16 @@ let package = Package(
     ],
     products: [
         .executable(name: "shuo", targets: ["ShuoApp"]),
+        .executable(name: "shuo-bench", targets: ["ShuoBench"]),
     ],
     targets: [
         .executableTarget(
             name: "ShuoApp",
             path: "App/Sources"
+        ),
+        .executableTarget(
+            name: "ShuoBench",
+            path: "Bench/Sources"
         ),
     ]
 )
