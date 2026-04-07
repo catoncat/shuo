@@ -397,7 +397,7 @@ private final class AppEngineController {
     func startRecording(with context: EngineContextSnapshot, trigger: String) {
         queue.async {
             guard let bridge = self.bridge, bridge.isRunning else { return }
-            let sessionId = "shuo-app-\(UUID().uuidString.lowercased())"
+            let sessionId = "shuo-\(UUID().uuidString.lowercased())"
             self.activeSessionID = sessionId
             var fields = runtimeTimelineContextFields(context)
             fields["session_id"] = sessionId

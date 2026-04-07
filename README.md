@@ -5,7 +5,7 @@ Shuo 是一个 macOS 菜单栏语音转写 app。
 ## 安装
 
 - 下载：
-  - https://github.com/catoncat/shuo-app/releases
+  - https://github.com/catoncat/shuo/releases
 - 下载最新的 `Shuo-vX.Y.Z-macos.zip`
 - 解压后把 `Shuo.app` 拖到 `Applications`
 
