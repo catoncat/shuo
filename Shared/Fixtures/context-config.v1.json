@@ -1,0 +1,37 @@
+{
+  "version": 1,
+  "recognition": {
+    "enable_punctuation": true,
+    "enable_speech_rejection": false
+  },
+  "hotwords": [
+    "HJ Voice",
+    "Doubao"
+  ],
+  "user_terms": [
+    "Swift",
+    "Rust"
+  ],
+  "text_context": {
+    "mode": "auto",
+    "max_chars": 256,
+    "text": "",
+    "cursor_position": 0
+  },
+  "ime_context": {
+    "input_type": "default"
+  },
+  "advanced": {
+    "use_user_dictionary": true,
+    "enable_text_filter": true,
+    "enable_asr_twopass": true,
+    "enable_asr_threepass": true,
+    "remove_space_between_han_eng": false,
+    "remove_space_between_han_num": false,
+    "strong_ddc": false
+  },
+  "shortcut": {
+    "key": "right_command",
+    "mode": "hold"
+  }
+}

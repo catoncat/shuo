@@ -1,0 +1,9 @@
+{
+  "FAKE_CLIENT_BUNDLE_ID": "com.apple.Terminal",
+  "FAKE_CLIENT_UNIQUE_ID": "probe-client-1",
+  "FAKE_CLIENT_TEXT": "",
+  "FAKE_CLIENT_TRACE": "0",
+  "HANDLE_EVENT_PRESET": "right-command-double",
+  "PRE_HANDLE_EVENT_DELAY_SECONDS": "1",
+  "POST_HANDLE_EVENT_RUNLOOP_SECONDS": "3"
+}

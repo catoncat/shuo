@@ -1,0 +1,7 @@
+{"type":"hello","protocol_version":1}
+{"type":"ready","protocol_version":1,"engine_version":"fixture","session_state":"idle","auth_state":"cold","transport":"direct_frontier"}
+{"type":"update_context","context_snapshot":{"frontmost_bundle_id":"com.example.App","text_before_cursor":"你好","text_after_cursor":"世界","cursor_position":2,"capture_source":"focused_text_ax","captured_at_ms":1712345678901}}
+{"type":"start_recording","session_id":"fixture-session","trigger":"swift_host_cli","context_snapshot":{"frontmost_bundle_id":"com.example.App","text_before_cursor":"你好","text_after_cursor":"世界","cursor_position":2,"capture_source":"focused_text_ax","captured_at_ms":1712345678901}}
+{"type":"partial","session_id":"fixture-session","utterance_id":1,"text":"你好","is_stale":false}
+{"type":"final","session_id":"fixture-session","utterance_id":1,"text":"你好世界。","is_stale":false}
+{"type":"recording_stopped","session_id":"fixture-session","utterance_id":1,"reason":"flush_pending"}

@@ -1,0 +1,29 @@
+[package]
+name = "hj-dictation"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+base64 = "0.22"
+block2 = "0.6.2"
+clap = { version = "4", features = ["derive"] }
+futures-util = "0.3"
+http = "1"
+md5 = "0.7"
+objc2 = "0.6.4"
+objc2-avf-audio = { version = "0.3.2", features = [
+  "AVAudioEngine",
+  "AVAudioNode",
+  "AVAudioIONode",
+  "AVAudioFormat",
+  "AVAudioBuffer",
+  "AVAudioTime",
+  "AVAudioTypes",
+  "block2",
+] }
+reqwest = { version = "0.12", default-features = false, features = ["blocking", "json", "rustls-tls"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1", features = ["preserve_order"] }
+tokio = { version = "1", features = ["full"] }
+tokio-tungstenite = { version = "0.24", features = ["native-tls"] }
+uuid = { version = "1", features = ["v4"] }

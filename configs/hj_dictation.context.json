@@ -1,0 +1,40 @@
+{
+  "advanced" : {
+    "enable_asr_threepass" : true,
+    "enable_asr_twopass" : true,
+    "enable_text_filter" : true,
+    "remove_space_between_han_eng" : false,
+    "remove_space_between_han_num" : false,
+    "strong_ddc" : true,
+    "use_user_dictionary" : true
+  },
+  "hotwords" : [
+
+  ],
+  "ime_context" : {
+    "input_type" : "default"
+  },
+  "recognition" : {
+    "enable_punctuation" : true,
+    "enable_speech_rejection" : true
+  },
+  "shortcut" : {
+    "key" : "right_command",
+    "mode" : "hold"
+  },
+  "text_context" : {
+    "cursor_position" : 0,
+    "max_chars" : 1024,
+    "mode" : "auto",
+    "text" : ""
+  },
+  "user_terms" : [
+    "claude code",
+    "codex",
+    "最佳实践",
+    "工单",
+    "环境变量",
+    "Siri"
+  ],
+  "version" : 1
+}

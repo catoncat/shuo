@@ -1,0 +1,37 @@
+{
+  "app_name": "com.apple.Terminal",
+  "payload": {
+    "enable_punctuation": true,
+    "enable_speech_rejection": false
+  },
+  "context": {
+    "chat": [
+      {
+        "type": "user_input",
+        "data_json": {
+          "text": "",
+          "cursor_position": 0
+        }
+      }
+    ],
+    "hotwords": [
+      {
+        "word": "豆包"
+      }
+    ],
+    "trackingInfo": {},
+    "ime_info": {
+      "inputType": "default"
+    },
+    "loc_info": {}
+  },
+  "extra": {
+    "disable_user_words": false,
+    "enable_asr_twopass": true,
+    "enable_asr_threepass": true,
+    "enable_text_filter": true,
+    "remove_space_between_han_eng": true,
+    "remove_space_between_han_num": true,
+    "strong_ddc": false
+  }
+}

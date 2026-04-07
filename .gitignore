@@ -1,0 +1,6 @@
+.build/
+dist/
+DerivedData/
+Engine/hj-dictation/target/
+*.xcuserstate
+.DS_Store
