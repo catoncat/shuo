@@ -983,7 +983,7 @@ fn best_partial_candidate<'a>(candidates: &'a [&'a ResultCandidate]) -> Option<&
         (Some(display), Some(streaming)) => {
             let display_len = display.text.chars().count();
             let streaming_len = streaming.text.chars().count();
-            if streaming_len >= display_len + 2 {
+            if streaming_len >= display_len {
                 Some(streaming)
             } else {
                 Some(display)
