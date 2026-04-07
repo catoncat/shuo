@@ -1179,12 +1179,8 @@ func resolveEngineLauncher(
 
     let helperCandidates: [(binary: URL, root: URL)] = [
         (
-            currentDirectoryURL.appendingPathComponent("Engine/hj-dictation/target/debug/hj-dictation"),
-            currentDirectoryURL.appendingPathComponent("Engine/hj-dictation")
-        ),
-        (
-            currentDirectoryURL.appendingPathComponent("native/hj-dictation/target/debug/hj-dictation"),
-            currentDirectoryURL.appendingPathComponent("native/hj-dictation")
+            currentDirectoryURL.appendingPathComponent("Engine/shuo-engine/target/debug/shuo-engine"),
+            currentDirectoryURL.appendingPathComponent("Engine/shuo-engine")
         ),
     ]
     for candidate in helperCandidates {
@@ -1195,8 +1191,7 @@ func resolveEngineLauncher(
     }
 
     let manifestCandidates = [
-        currentDirectoryURL.appendingPathComponent("Engine/hj-dictation/Cargo.toml"),
-        currentDirectoryURL.appendingPathComponent("native/hj-dictation/Cargo.toml"),
+        currentDirectoryURL.appendingPathComponent("Engine/shuo-engine/Cargo.toml"),
     ]
     let manifestPath = manifestCandidates.first { FileManager.default.fileExists(atPath: $0.path) }?.path
         ?? manifestCandidates[0].path
@@ -1257,10 +1252,10 @@ private func helperBinaryIsFresh(binaryPath: String, helperRootURLs: [URL]) -> B
 private func bundledHelperCandidateURLs() -> [URL] {
     var candidates: [URL] = []
     if let resourceURL = Bundle.main.resourceURL {
-        candidates.append(resourceURL.appendingPathComponent("bin/hj-dictation"))
+        candidates.append(resourceURL.appendingPathComponent("bin/shuo-engine"))
     }
     if let executableDir = Bundle.main.executableURL?.deletingLastPathComponent() {
-        candidates.append(executableDir.appendingPathComponent("hj-dictation"))
+        candidates.append(executableDir.appendingPathComponent("shuo-engine"))
     }
     return candidates
 }

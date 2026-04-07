@@ -81,7 +81,7 @@ final class TranscriptHistoryStore: ObservableObject {
         let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
             ?? URL(fileURLWithPath: NSHomeDirectory()).appendingPathComponent("Library/Application Support")
         return base
-            .appendingPathComponent("hj-voice", isDirectory: true)
+            .appendingPathComponent("shuo", isDirectory: true)
             .appendingPathComponent("recent_transcripts.json")
     }
 }

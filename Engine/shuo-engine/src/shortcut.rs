@@ -74,7 +74,7 @@ pub(crate) unsafe extern "C-unwind" fn event_tap_callback(
                         .saturating_sub(RIGHT_CMD_PRESS_STARTED_MS.load(Ordering::SeqCst));
                     if hold_ms < SHORT_TAP_CANCEL_MS && !VOICE_STARTED.load(Ordering::SeqCst) {
                         verbose_shortcut_log!(
-                            "[hj-dictation] short tap detected; cancelling recording hold_ms={}",
+                            "[shuo-engine] short tap detected; cancelling recording hold_ms={}",
                             hold_ms
                         );
                         dispatch_action_on_main(MainAction::Cancel);
@@ -89,10 +89,10 @@ pub(crate) unsafe extern "C-unwind" fn event_tap_callback(
                 if gap < DOUBLE_TAP_THRESHOLD_MS && last_up > 0 {
                     LAST_TRIGGER_UP_MS.store(0, Ordering::SeqCst);
                     if IS_RECORDING.load(Ordering::SeqCst) {
-                        verbose_shortcut_log!("[hj-dictation] double-tap → stop");
+                        verbose_shortcut_log!("[shuo-engine] double-tap → stop");
                         dispatch_action_on_main(MainAction::Stop);
                     } else {
-                        verbose_shortcut_log!("[hj-dictation] double-tap → start");
+                        verbose_shortcut_log!("[shuo-engine] double-tap → start");
                         dispatch_action_on_main(MainAction::Start);
                     }
                 } else {
@@ -107,12 +107,12 @@ pub(crate) unsafe extern "C-unwind" fn event_tap_callback(
         RIGHT_CMD_CHORD_ACTIVE.store(true, Ordering::SeqCst);
         if IS_RECORDING.load(Ordering::SeqCst) {
             verbose_shortcut_log!(
-                "[hj-dictation] right-command chord detected; cancelling dictation"
+                "[shuo-engine] right-command chord detected; cancelling dictation"
             );
             dispatch_action_on_main(MainAction::Cancel);
         } else {
             verbose_shortcut_log!(
-                "[hj-dictation] right-command chord detected; suppressing dictation"
+                "[shuo-engine] right-command chord detected; suppressing dictation"
             );
         }
     }

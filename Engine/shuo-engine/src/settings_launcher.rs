@@ -10,8 +10,8 @@ pub(crate) fn dispatch_open_settings() {
 }
 
 fn launch_settings_process() {
-    let Some(bin) = resolve_hj_voice_bin() else {
-        eprintln!("[hj-dictation] settings UI launcher not found (hj-voice)");
+    let Some(bin) = resolve_shuo_bin() else {
+        eprintln!("[shuo-engine] settings UI launcher not found (shuo)");
         return;
     };
 
@@ -26,14 +26,20 @@ fn launch_settings_process() {
 
     if let Err(error) = cmd.spawn() {
         eprintln!(
-            "[hj-dictation] failed to launch settings UI via {}: {}",
+            "[shuo-engine] failed to launch settings UI via {}: {}",
             bin.display(),
             error
         );
     }
 }
 
-fn resolve_hj_voice_bin() -> Option<PathBuf> {
+fn resolve_shuo_bin() -> Option<PathBuf> {
+    if let Ok(raw) = std::env::var("SHUO_BIN") {
+        let path = PathBuf::from(raw);
+        if is_executable(&path) {
+            return Some(path);
+        }
+    }
     if let Ok(raw) = std::env::var("HJ_VOICE_BIN") {
         let path = PathBuf::from(raw);
         if is_executable(&path) {
@@ -55,11 +61,11 @@ fn resolve_hj_voice_bin() -> Option<PathBuf> {
         let mut cur: Option<&Path> = Some(root.as_path());
         for _ in 0..8 {
             let Some(dir) = cur else { break };
-            let debug = dir.join(".build/debug/hj-voice");
+            let debug = dir.join(".build/debug/shuo");
             if is_executable(&debug) {
                 return Some(debug);
             }
-            let release = dir.join(".build/release/hj-voice");
+            let release = dir.join(".build/release/shuo");
             if is_executable(&release) {
                 return Some(release);
             }
@@ -67,7 +73,7 @@ fn resolve_hj_voice_bin() -> Option<PathBuf> {
         }
     }
 
-    Some(PathBuf::from("hj-voice"))
+    Some(PathBuf::from("shuo"))
 }
 
 fn is_executable(path: &Path) -> bool {

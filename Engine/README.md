@@ -1,8 +1,5 @@
 # Engine
 
-- Rust helper 实现源码：
-  - `Engine/hj-dictation/src`
-- 兼容构建入口暂时仍保留：
-  - `native/hj-dictation/Cargo.toml`
-  - `native/hj-dictation/src/*.rs`
-- 这些 `native/.../src/*.rs` 现在只是 `include!` wrapper。
+- Rust helper 源码：`Engine/shuo-engine/src`
+- 本地构建：`cargo build --manifest-path Engine/shuo-engine/Cargo.toml`
+- 本地测试：`cargo test --manifest-path Engine/shuo-engine/Cargo.toml`

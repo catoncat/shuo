@@ -16,6 +16,6 @@ fn main() {
         .map(|d| d.as_secs().to_string())
         .unwrap_or_else(|_| "unknown".to_string());
 
-    println!("cargo:rustc-env=HJ_DICTATION_GIT_REV={git_rev}");
-    println!("cargo:rustc-env=HJ_DICTATION_BUILD_STAMP={build_stamp}");
+    println!("cargo:rustc-env=SHUO_ENGINE_GIT_REV={git_rev}");
+    println!("cargo:rustc-env=SHUO_ENGINE_BUILD_STAMP={build_stamp}");
 }

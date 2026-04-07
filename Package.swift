@@ -3,16 +3,16 @@
 import PackageDescription
 
 let package = Package(
-    name: "HJVoiceBridge",
+    name: "ShuoApp",
     platforms: [
         .macOS(.v13),
     ],
     products: [
-        .executable(name: "hj-voice", targets: ["HJVoiceBridge"]),
+        .executable(name: "shuo", targets: ["ShuoApp"]),
     ],
     targets: [
         .executableTarget(
-            name: "HJVoiceBridge",
+            name: "ShuoApp",
             path: "App/Sources"
         ),
     ]

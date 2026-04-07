@@ -35,7 +35,7 @@ struct RuntimeTimelineLatestReport: Encodable {
 final class RuntimeTimeline {
     static let shared = RuntimeTimeline()
 
-    private let queue = DispatchQueue(label: "hj.voice.timeline", qos: .utility)
+    private let queue = DispatchQueue(label: "shuo.timeline", qos: .utility)
     private let sessionID = UUID().uuidString.lowercased()
     private let startedAtMs = runtimeTimelineNowMs()
     private let fileURL: URL
@@ -153,7 +153,7 @@ final class RuntimeTimeline {
         let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
             ?? URL(fileURLWithPath: NSHomeDirectory()).appendingPathComponent("Library/Application Support")
         return base
-            .appendingPathComponent("hj-voice", isDirectory: true)
+            .appendingPathComponent("shuo", isDirectory: true)
             .appendingPathComponent("diagnostics", isDirectory: true)
             .appendingPathComponent("timeline", isDirectory: true)
     }

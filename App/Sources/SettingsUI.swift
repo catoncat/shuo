@@ -197,9 +197,11 @@ func resolveContextConfigPath() -> URL? {
     }
 
     if let resourceURL = Bundle.main.resourceURL {
-        let bundledCandidate = resourceURL.appendingPathComponent("configs/hj_dictation.context.json")
-        if FileManager.default.fileExists(atPath: bundledCandidate.path) {
-            return bundledCandidate
+        for name in ["configs/shuo.context.json", "configs/hj_dictation.context.json"] {
+            let bundledCandidate = resourceURL.appendingPathComponent(name)
+            if FileManager.default.fileExists(atPath: bundledCandidate.path) {
+                return bundledCandidate
+            }
         }
     }
 
@@ -213,9 +215,11 @@ func resolveContextConfigPath() -> URL? {
         var current: URL? = root
         for _ in 0..<8 {
             guard let dir = current else { break }
-            let candidate = dir.appendingPathComponent("configs/hj_dictation.context.json")
-            if FileManager.default.fileExists(atPath: candidate.path) {
-                return candidate
+            for name in ["configs/shuo.context.json", "configs/hj_dictation.context.json"] {
+                let candidate = dir.appendingPathComponent(name)
+                if FileManager.default.fileExists(atPath: candidate.path) {
+                    return candidate
+                }
             }
             current = dir.deletingLastPathComponent()
             if current == dir { break }
@@ -227,7 +231,7 @@ func resolveContextConfigPath() -> URL? {
 private final class ContextConfigCacheStore {
     static let shared = ContextConfigCacheStore()
 
-    private let queue = DispatchQueue(label: "hj.app.context-config-cache", attributes: .concurrent)
+    private let queue = DispatchQueue(label: "shuo.app.context-config-cache", attributes: .concurrent)
     private var cached = ContextConfig()
     private var loaded = false
 
@@ -302,7 +306,7 @@ private final class SettingsStore: ObservableObject {
 
     func load() {
         guard configPath != nil else {
-            status = "未找到配置路径（CONTEXT_CONFIG_PATH 或 configs/hj_dictation.context.json）"
+            status = "未找到配置路径（CONTEXT_CONFIG_PATH 或 configs/shuo.context.json）"
             statusLevel = .error
             return
         }
@@ -557,7 +561,7 @@ func makeSettingsWindow() -> NSWindow {
         backing: .buffered,
         defer: false
     )
-    window.title = "HJ 听写设置"
+    window.title = "Shuo 设置"
     window.center()
     window.contentView = hosting
     window.makeKeyAndOrderFront(nil)

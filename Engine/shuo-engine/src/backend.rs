@@ -80,7 +80,7 @@ pub(crate) fn queue_backend_command(
     if let Err(error) = tx.send(command) {
         BACKEND_READY.store(false, Ordering::SeqCst);
         eprintln!(
-            "[hj-dictation] backend command send failed action={} error={}",
+            "[shuo-engine] backend command send failed action={} error={}",
             label, error
         );
         dispatch_subtitle_hide();
@@ -110,7 +110,7 @@ pub(crate) fn spawn_backend_worker(
                 Ok((ws_stream, _)) => {
                     let (mut write, mut read) = ws_stream.split();
                     BACKEND_READY.store(true, Ordering::SeqCst);
-                    verbose_backend_log!("[hj-dictation] backend ready");
+                    verbose_backend_log!("[shuo-engine] backend ready");
 
                     let writer_tx = thread_cmd_tx.clone();
                     let partial_thread = if partial_interval_ms > 0 {
@@ -173,7 +173,7 @@ pub(crate) fn spawn_backend_worker(
                                 Ok(Message::Text(text)) => {
                                     if let Ok(msg) = serde_json::from_str::<ServerMessage>(&text) {
                                         if let Some(error) = msg.error {
-                                            eprintln!("[hj-dictation] backend error: {error}");
+                                            eprintln!("[shuo-engine] backend error: {error}");
                                         } else if msg.status.as_deref() == Some("ready") {
                                             BACKEND_READY.store(true, Ordering::SeqCst);
                                         } else if matches!(
@@ -182,7 +182,7 @@ pub(crate) fn spawn_backend_worker(
                                         ) {
                                             if let Some(timings) = msg.timings {
                                                 verbose_backend_log!(
-                                                    "[hj-dictation] backend_warmup status={} elapsed_ms={} reason={}",
+                                                    "[shuo-engine] backend_warmup status={} elapsed_ms={} reason={}",
                                                     msg.status.unwrap_or_else(|| "-".to_string()),
                                                     timings.elapsed_ms.unwrap_or(0),
                                                     timings.reason.unwrap_or_else(|| "-".to_string()),
@@ -203,7 +203,7 @@ pub(crate) fn spawn_backend_worker(
                                                         || utterance_id != current_utterance_id)
                                                 {
                                                     verbose_backend_log!(
-                                                        "[hj-dictation] stale partial ignored utterance_id={} current_utterance_id={} last_final_utterance_id={} last_abandoned_utterance_id={}",
+                                                        "[shuo-engine] stale partial ignored utterance_id={} current_utterance_id={} last_final_utterance_id={} last_abandoned_utterance_id={}",
                                                         utterance_id,
                                                         current_utterance_id,
                                                         completed_utterance_id,
@@ -214,7 +214,7 @@ pub(crate) fn spawn_backend_worker(
                                                 PARTIAL_REQUEST_IN_FLIGHT.store(false, Ordering::SeqCst);
                                                 PARTIAL_RECEIVED_COUNT.fetch_add(1, Ordering::SeqCst);
                                                 if !text.is_empty() {
-                                                    verbose_backend_log!("[hj-dictation] partial: {text}");
+                                                    verbose_backend_log!("[shuo-engine] partial: {text}");
                                                     let normalized = text.trim();
                                                     let subtitle_snapshot = if normalized.is_empty() {
                                                         None
@@ -244,7 +244,7 @@ pub(crate) fn spawn_backend_worker(
                                                             .saturating_sub(type_started_at_ms);
                                                         if deleted_chars > 0 || appended_chars > 0 {
                                                             verbose_backend_log!(
-                                                                "[hj-dictation] partial_typed chars={} prefix_chars={} deleted_chars={} appended_chars={} type_ms={}",
+                                                                "[shuo-engine] partial_typed chars={} prefix_chars={} deleted_chars={} appended_chars={} type_ms={}",
                                                                 normalized.chars().count(),
                                                                 prefix_chars,
                                                                 deleted_chars,
@@ -270,7 +270,7 @@ pub(crate) fn spawn_backend_worker(
                                                     && utterance_id <= abandoned_utterance_id
                                                 {
                                                     verbose_backend_log!(
-                                                        "[hj-dictation] stale final ignored utterance_id={} last_abandoned_utterance_id={}",
+                                                        "[shuo-engine] stale final ignored utterance_id={} last_abandoned_utterance_id={}",
                                                         utterance_id,
                                                         abandoned_utterance_id
                                                     );
@@ -299,7 +299,7 @@ pub(crate) fn spawn_backend_worker(
                                                         true,
                                                     );
                                                 }
-                                                verbose_backend_log!("[hj-dictation] final: {text}");
+                                                verbose_backend_log!("[shuo-engine] final: {text}");
                                                 let type_started_at_ms = now_millis();
                                                 let commit_text = subtitle_snapshot.commit_text.trim();
                                                 if TYPE_PARTIAL.load(Ordering::SeqCst) {
@@ -307,7 +307,7 @@ pub(crate) fn spawn_backend_worker(
                                                         commit_partial_text(commit_text);
                                                     if deleted_chars > 0 || appended_chars > 0 {
                                                         verbose_backend_log!(
-                                                            "[hj-dictation] final_patched chars={} prefix_chars={} deleted_chars={} appended_chars={}",
+                                                            "[shuo-engine] final_patched chars={} prefix_chars={} deleted_chars={} appended_chars={}",
                                                             commit_text.chars().count(),
                                                             prefix_chars,
                                                             deleted_chars,
@@ -339,7 +339,7 @@ pub(crate) fn spawn_backend_worker(
                                                         0
                                                     };
                                                     verbose_backend_log!(
-                                                        "[hj-dictation] timings utterance_id={} capture_ms={} flush_roundtrip_ms={} audio_ms={} warmup_ms={} infer_ms={} context_capture_ms={} context_available={} context_source={} postprocess_ms={} llm_ms={} llm_used={} llm_timeout_sec={} llm_provider={} llm_model={} backend_total_ms={} type_ms={} partial_sent={} partial_returned={} partial_skipped={} warmup_reason={}",
+                                                        "[shuo-engine] timings utterance_id={} capture_ms={} flush_roundtrip_ms={} audio_ms={} warmup_ms={} infer_ms={} context_capture_ms={} context_available={} context_source={} postprocess_ms={} llm_ms={} llm_used={} llm_timeout_sec={} llm_provider={} llm_model={} backend_total_ms={} type_ms={} partial_sent={} partial_returned={} partial_skipped={} warmup_reason={}",
                                                         utterance_id,
                                                         capture_ms,
                                                         flush_roundtrip_ms,
@@ -370,7 +370,7 @@ pub(crate) fn spawn_backend_worker(
                                 Ok(Message::Close(_)) => break,
                                 Ok(_) => {}
                                 Err(error) => {
-                                    eprintln!("[hj-dictation] backend read error: {error}");
+                                    eprintln!("[shuo-engine] backend read error: {error}");
                                     break;
                                 }
                             }
@@ -426,7 +426,7 @@ pub(crate) fn spawn_backend_worker(
                         };
 
                         if let Err(error) = send_result {
-                            eprintln!("[hj-dictation] backend write error: {error}");
+                            eprintln!("[shuo-engine] backend write error: {error}");
                             break;
                         }
                     }
@@ -441,7 +441,7 @@ pub(crate) fn spawn_backend_worker(
                 }
                 Err(error) => {
                     PARTIAL_REQUEST_IN_FLIGHT.store(false, Ordering::SeqCst);
-                    eprintln!("[hj-dictation] backend connect error: {error}");
+                    eprintln!("[shuo-engine] backend connect error: {error}");
                 }
             }
         });

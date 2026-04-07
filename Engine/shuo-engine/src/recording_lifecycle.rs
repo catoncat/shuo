@@ -24,7 +24,7 @@ pub(crate) fn spawn_flush_watchdog(utterance_id: u64) {
             return;
         }
         eprintln!(
-            "[hj-dictation] flush watchdog timeout utterance_id={} after_ms={}",
+            "[shuo-engine] flush watchdog timeout utterance_id={} after_ms={}",
             utterance_id, FLUSH_WATCHDOG_TIMEOUT_MS
         );
         LAST_ABANDONED_UTTERANCE_ID.store(utterance_id, Ordering::SeqCst);

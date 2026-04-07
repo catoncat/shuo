@@ -433,26 +433,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2304e00983f87ffb38b55b444b5e3b60a884b5d30c0fca7d82fe33449bbe55ea"
 
 [[package]]
-name = "hj-dictation"
-version = "0.1.0"
-dependencies = [
- "base64",
- "block2",
- "clap",
- "futures-util",
- "http",
- "md5",
- "objc2",
- "objc2-avf-audio",
- "reqwest",
- "serde",
- "serde_json",
- "tokio",
- "tokio-tungstenite",
- "uuid",
-]
-
-[[package]]
 name = "http"
 version = "1.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1372,6 +1352,26 @@ name = "shlex"
 version = "1.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0fda2ff0d084019ba4d7c6f371c95d8fd75ce3524c3cb8fb653a3023f6323e64"
+
+[[package]]
+name = "shuo-engine"
+version = "0.1.0"
+dependencies = [
+ "base64",
+ "block2",
+ "clap",
+ "futures-util",
+ "http",
+ "md5",
+ "objc2",
+ "objc2-avf-audio",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "tokio",
+ "tokio-tungstenite",
+ "uuid",
+]
 
 [[package]]
 name = "signal-hook-registry"

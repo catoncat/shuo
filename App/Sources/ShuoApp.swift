@@ -352,7 +352,7 @@ private final class AppEngineController {
 
     private let launcher: EngineLaunchInfo
     private let currentDirectoryURL: URL
-    private let queue = DispatchQueue(label: "hj.app.engine")
+    private let queue = DispatchQueue(label: "shuo.app.engine")
     private var bridge: EngineProcessBridge?
     private var manualShutdown = false
     private var snapshot = EngineRuntimeSnapshot()
@@ -397,7 +397,7 @@ private final class AppEngineController {
     func startRecording(with context: EngineContextSnapshot, trigger: String) {
         queue.async {
             guard let bridge = self.bridge, bridge.isRunning else { return }
-            let sessionId = "hj-app-\(UUID().uuidString.lowercased())"
+            let sessionId = "shuo-app-\(UUID().uuidString.lowercased())"
             self.activeSessionID = sessionId
             var fields = runtimeTimelineContextFields(context)
             fields["session_id"] = sessionId
@@ -696,7 +696,7 @@ private func shortcutMenuTitle() -> String {
     return "按住\(binding.title)说话"
 }
 
-private final class HJAppDelegate: NSObject, NSApplicationDelegate {
+private final class ShuoAppDelegate: NSObject, NSApplicationDelegate {
     private let options: AppOptions
     private let engine: AppEngineController
     private let transcriptHistory = TranscriptHistoryStore()
@@ -1006,7 +1006,7 @@ private final class HJAppDelegate: NSObject, NSApplicationDelegate {
         guard let button = statusItem.button else { return }
         if let image = NSImage(
             systemSymbolName: recording ? "mic.fill" : "mic",
-            accessibilityDescription: "HJ Voice"
+            accessibilityDescription: "Shuo"
         ) {
             image.isTemplate = true
             button.image = image
@@ -1046,7 +1046,7 @@ private final class HJAppDelegate: NSObject, NSApplicationDelegate {
 
 func runMenuBarApp(options: AppOptions) {
     let app = NSApplication.shared
-    let delegate = HJAppDelegate(options: options)
+    let delegate = ShuoAppDelegate(options: options)
     app.delegate = delegate
     app.setActivationPolicy(.accessory)
     app.run()

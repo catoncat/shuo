@@ -163,9 +163,11 @@ fn default_context_config_path() -> Option<String> {
         let mut dir = exe.parent().map(|path| path.to_path_buf());
         for _ in 0..6 {
             if let Some(current) = &dir {
-                let candidate = current.join("configs/hj_dictation.context.json");
-                if candidate.exists() {
-                    return Some(candidate.to_string_lossy().into_owned());
+                for name in ["configs/shuo.context.json", "configs/hj_dictation.context.json"] {
+                    let candidate = current.join(name);
+                    if candidate.exists() {
+                        return Some(candidate.to_string_lossy().into_owned());
+                    }
                 }
                 dir = current.parent().map(|path| path.to_path_buf());
             }
@@ -214,7 +216,7 @@ mod tests {
         assert_eq!(config.text_context.max_chars, 256);
         assert!(config.recognition.enable_punctuation);
         assert!(config.advanced.use_user_dictionary);
-        assert_eq!(config.hotwords, vec!["HJ Voice".to_string(), "Doubao".to_string()]);
+        assert_eq!(config.hotwords, vec!["Shuo".to_string(), "Doubao".to_string()]);
         assert_eq!(config.user_terms, vec!["Swift".to_string(), "Rust".to_string()]);
     }
 }

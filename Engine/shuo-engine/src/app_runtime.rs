@@ -81,15 +81,15 @@ pub(crate) fn run_app(args: Args) {
     if args.subtitle_overlay {
         if subtitle_should_reduce_transparency() {
             eprintln!(
-                "[hj-dictation] subtitle overlay enabled (fallback style: macOS Reduce Transparency is on, scale={ui_scale:.2})"
+                "[shuo-engine] subtitle overlay enabled (fallback style: macOS Reduce Transparency is on, scale={ui_scale:.2})"
             );
         } else {
-            eprintln!("[hj-dictation] subtitle overlay enabled (glass style, scale={ui_scale:.2})");
+            eprintln!("[shuo-engine] subtitle overlay enabled (glass style, scale={ui_scale:.2})");
         }
     }
 
     eprintln!(
-        "[hj-dictation] ready v{} - hold right Command alone to dictate, release to type{}",
+        "[shuo-engine] ready v{} - hold right Command alone to dictate, release to type{}",
         HELPER_VERSION,
         if args.subtitle_overlay {
             "; live subtitles appear at the bottom"

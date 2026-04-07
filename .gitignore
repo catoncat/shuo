@@ -1,6 +1,6 @@
 .build/
 dist/
 DerivedData/
-Engine/hj-dictation/target/
+Engine/shuo-engine/target/
 *.xcuserstate
 .DS_Store

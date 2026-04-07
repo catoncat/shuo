@@ -5,12 +5,14 @@
     "enable_speech_rejection": false
   },
   "hotwords": [
-    "Shuo",
-    "Doubao"
+    "豆包",
+    "OpenAI",
+    "Cursor"
   ],
   "user_terms": [
-    "Swift",
-    "Rust"
+    "SAMI",
+    "BiStream",
+    "Cronet"
   ],
   "text_context": {
     "mode": "auto",
@@ -26,12 +28,8 @@
     "enable_text_filter": true,
     "enable_asr_twopass": true,
     "enable_asr_threepass": true,
-    "remove_space_between_han_eng": false,
-    "remove_space_between_han_num": false,
+    "remove_space_between_han_eng": true,
+    "remove_space_between_han_num": true,
     "strong_ddc": false
-  },
-  "shortcut": {
-    "key": "right_command",
-    "mode": "hold"
   }
 }

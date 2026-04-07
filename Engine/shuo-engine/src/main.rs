@@ -16,9 +16,9 @@ use stdio_engine::run_stdio_engine;
 const HELPER_VERSION: &str = concat!(
     env!("CARGO_PKG_VERSION"),
     " (",
-    env!("HJ_DICTATION_GIT_REV"),
+    env!("SHUO_ENGINE_GIT_REV"),
     ", build ",
-    env!("HJ_DICTATION_BUILD_STAMP"),
+    env!("SHUO_ENGINE_BUILD_STAMP"),
     ")"
 );
 #[derive(Parser, Debug, Clone)]

@@ -316,7 +316,7 @@ fn default_auth_cache_path() -> Option<PathBuf> {
         PathBuf::from(home)
             .join("Library")
             .join("Application Support")
-            .join("hj-dictation")
+            .join("shuo-engine")
             .join("frontier_auth.json"),
     )
 }
@@ -327,7 +327,7 @@ fn default_desktop_session_env_path() -> Option<PathBuf> {
         PathBuf::from(home)
             .join("Library")
             .join("Application Support")
-            .join("hj-dictation")
+            .join("shuo-engine")
             .join("desktop_session.env"),
     )
 }
@@ -1002,7 +1002,7 @@ mod tests {
     use std::path::PathBuf;
 
     fn temp_path(name: &str) -> PathBuf {
-        std::env::temp_dir().join(format!("hj-dictation-{}-{}-{}.json", name, std::process::id(), crate::state::now_millis()))
+        std::env::temp_dir().join(format!("shuo-engine-{}-{}-{}.json", name, std::process::id(), crate::state::now_millis()))
     }
 
     fn base_args() -> Args {

@@ -112,12 +112,12 @@ impl Controller {
             return;
         }
         if !BACKEND_READY.load(Ordering::SeqCst) {
-            eprintln!("[hj-dictation] backend not ready yet");
+            eprintln!("[shuo-engine] backend not ready yet");
             return;
         }
         if let Some(utterance_id) = pending_flush_utterance_id() {
             eprintln!(
-                "[hj-dictation] previous utterance still processing; wait for final text (utterance_id={})",
+                "[shuo-engine] previous utterance still processing; wait for final text (utterance_id={})",
                 utterance_id
             );
             if SHOW_SUBTITLE_OVERLAY.load(Ordering::SeqCst) {
@@ -126,7 +126,7 @@ impl Controller {
             return;
         }
 
-        verbose_ui_log!("[hj-dictation] recording started...");
+        verbose_ui_log!("[shuo-engine] recording started...");
         IS_RECORDING.store(true, Ordering::SeqCst);
 
         // Play Siri-style start sound
@@ -169,7 +169,7 @@ impl Controller {
 
         if unsafe { self.audio_engine.isRunning() } {
             verbose_ui_log!(
-                "[hj-dictation] audio engine still running before start; forcing reset"
+                "[shuo-engine] audio engine still running before start; forcing reset"
             );
             unsafe {
                 self.audio_engine.stop();
@@ -187,7 +187,7 @@ impl Controller {
         let preroll_limit = (TARGET_SAMPLE_RATE as usize * PRE_SPEECH_ROLL_MS as usize) / 1000;
         let preroll_buffer = std::sync::Mutex::new(VecDeque::<i16>::with_capacity(preroll_limit));
         verbose_ui_log!(
-            "[hj-dictation] native sample rate: {}Hz format={} channels={} interleaved={}",
+            "[shuo-engine] native sample rate: {}Hz format={} channels={} interleaved={}",
             native_sample_rate,
             audio_common_format_name(native_common_format),
             native_channels,
@@ -210,7 +210,7 @@ impl Controller {
                         let interleaved = unsafe { format.isInterleaved() };
                         let stride = unsafe { buffer.stride() };
                         eprintln!(
-                            "[hj-dictation] unsupported input buffer format={} channels={} interleaved={} stride={}",
+                            "[shuo-engine] unsupported input buffer format={} channels={} interleaved={} stride={}",
                             audio_common_format_name(common),
                             channels,
                             interleaved,
@@ -248,7 +248,7 @@ impl Controller {
                         let initial_len = initial_pcm.len();
                         drop(preroll);
                         verbose_ui_log!(
-                            "[hj-dictation] voice detected; sending preroll_ms={} peak={:.4} rms={:.4}",
+                            "[shuo-engine] voice detected; sending preroll_ms={} peak={:.4} rms={:.4}",
                             (initial_len as u64 * 1000) / TARGET_SAMPLE_RATE as u64,
                             peak,
                             rms
@@ -296,13 +296,13 @@ impl Controller {
         unsafe { self.audio_engine.prepare() };
         let engine_started_at_ms = now_millis();
         if let Err(error) = unsafe { self.audio_engine.startAndReturnError() } {
-            eprintln!("[hj-dictation] audio engine start error: {:?}", error);
+            eprintln!("[shuo-engine] audio engine start error: {:?}", error);
             IS_RECORDING.store(false, Ordering::SeqCst);
             set_status_icon(&self.status_item, false, mtm);
             unsafe { microphone.removeTapOnBus(0) };
         } else {
             verbose_ui_log!(
-                "[hj-dictation] engine_start_ms={}",
+                "[shuo-engine] engine_start_ms={}",
                 now_millis().saturating_sub(engine_started_at_ms)
             );
         }
@@ -314,11 +314,11 @@ impl Controller {
         }
 
         if flush_result {
-            verbose_ui_log!("[hj-dictation] recording stopped");
+            verbose_ui_log!("[shuo-engine] recording stopped");
             // Play Siri-style stop sound
             play_system_sound(SFX_CONFIRM);
         } else {
-            verbose_ui_log!("[hj-dictation] recording cancelled");
+            verbose_ui_log!("[shuo-engine] recording cancelled");
         }
         set_status_icon(&self.status_item, false, mtm);
 
@@ -342,7 +342,7 @@ impl Controller {
         let min_samples = (TARGET_SAMPLE_RATE as usize * MIN_UTTERANCE_MS as usize) / 1000;
         let voice_started = VOICE_STARTED.load(Ordering::SeqCst);
         verbose_ui_log!(
-            "[hj-dictation] finish_recording flush_result={} voice_started={} sent_samples={} callbacks={} unsupported_buffers={} min_samples={}",
+            "[shuo-engine] finish_recording flush_result={} voice_started={} sent_samples={} callbacks={} unsupported_buffers={} min_samples={}",
             flush_result,
             voice_started,
             sent_samples,
@@ -353,14 +353,14 @@ impl Controller {
 
         if !voice_started || sent_samples < min_samples {
             if audio_callbacks == 0 {
-                eprintln!("[hj-dictation] no audio callbacks received from AVAudioEngine");
+                eprintln!("[shuo-engine] no audio callbacks received from AVAudioEngine");
             } else if unsupported_buffers > 0 {
                 eprintln!(
-                    "[hj-dictation] dropped {} audio buffers due to unsupported input format",
+                    "[shuo-engine] dropped {} audio buffers due to unsupported input format",
                     unsupported_buffers
                 );
             }
-            eprintln!("[hj-dictation] discarded short/quiet utterance");
+            eprintln!("[shuo-engine] discarded short/quiet utterance");
             PARTIAL_REQUEST_IN_FLIGHT.store(false, Ordering::SeqCst);
             clear_partial_typing_state();
             subtitle_session_reset();
@@ -376,7 +376,7 @@ impl Controller {
                 LAST_FLUSH_UTTERANCE_ID.store(utterance_id, Ordering::SeqCst);
                 LAST_FLUSH_SENT_MS.store(now_millis(), Ordering::SeqCst);
                 verbose_ui_log!(
-                    "[hj-dictation] flush queued utterance_id={} sent_samples={}",
+                    "[shuo-engine] flush queued utterance_id={} sent_samples={}",
                     utterance_id,
                     sent_samples
                 );
