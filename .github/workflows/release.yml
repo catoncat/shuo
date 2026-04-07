@@ -1,0 +1,66 @@
+name: release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "release tag, e.g. v0.1.0"
+        required: true
+        type: string
+
+jobs:
+  build-release:
+    runs-on: macos-14
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Resolve release metadata
+        shell: bash
+        run: |
+          if [[ "${GITHUB_EVENT_NAME}" == "workflow_dispatch" ]]; then
+            TAG="${{ inputs.tag }}"
+          else
+            TAG="${GITHUB_REF_NAME}"
+          fi
+          TAG="${TAG#refs/tags/}"
+          if [[ "$TAG" != v* ]]; then
+            TAG="v$TAG"
+          fi
+          echo "RELEASE_TAG=$TAG" >> "$GITHUB_ENV"
+          echo "SHUO_VERSION=${TAG#v}" >> "$GITHUB_ENV"
+          echo "SHUO_BUILD_NUMBER=${GITHUB_RUN_NUMBER}" >> "$GITHUB_ENV"
+
+      - name: Show toolchain
+        run: |
+          rustc --version
+          cargo --version
+          swift --version
+
+      - name: Build release asset
+        shell: bash
+        run: |
+          bash Packaging/package_release.sh "$RELEASE_TAG"
+          echo "ASSET_ZIP=dist/Shuo-${RELEASE_TAG}-macos.zip" >> "$GITHUB_ENV"
+          echo "ASSET_SHA=dist/Shuo-${RELEASE_TAG}-macos.zip.sha256" >> "$GITHUB_ENV"
+
+      - name: Publish GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            gh release upload "$RELEASE_TAG" "$ASSET_ZIP" "$ASSET_SHA" --clobber
+          else
+            gh release create "$RELEASE_TAG" "$ASSET_ZIP" "$ASSET_SHA" \
+              --title "Shuo $RELEASE_TAG" \
+              --notes "Prebuilt macOS app bundle for Shuo."
+          fi

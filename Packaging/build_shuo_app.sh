@@ -3,6 +3,8 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 APP_NAME="Shuo"
+APP_VERSION="${SHUO_VERSION:-0.1.0}"
+BUILD_NUMBER="${SHUO_BUILD_NUMBER:-1}"
 APP_BUNDLE="$ROOT/dist/${APP_NAME}.app"
 CONTENTS="$APP_BUNDLE/Contents"
 MACOS="$CONTENTS/MacOS"
@@ -13,6 +15,7 @@ SOUNDS_DIR="$RESOURCES/sounds"
 SWIFT_BIN="$ROOT/.build/release/shuo"
 ENGINE_BIN="$ROOT/Engine/shuo-engine/target/release/shuo-engine"
 
+mkdir -p "$ROOT/dist"
 rm -rf "$APP_BUNDLE"
 mkdir -p "$MACOS" "$BIN_DIR" "$CONFIG_DIR" "$SOUNDS_DIR"
 
@@ -41,8 +44,8 @@ cat >"$CONTENTS/Info.plist" <<EOF
   <key>CFBundleInfoDictionaryVersion</key><string>6.0</string>
   <key>CFBundleName</key><string>$APP_NAME</string>
   <key>CFBundlePackageType</key><string>APPL</string>
-  <key>CFBundleShortVersionString</key><string>0.1.0</string>
-  <key>CFBundleVersion</key><string>1</string>
+  <key>CFBundleShortVersionString</key><string>$APP_VERSION</string>
+  <key>CFBundleVersion</key><string>$BUILD_NUMBER</string>
   <key>LSMinimumSystemVersion</key><string>13.0</string>
   <key>LSUIElement</key><true/>
   <key>NSMicrophoneUsageDescription</key><string>Shuo needs microphone access for dictation.</string>
