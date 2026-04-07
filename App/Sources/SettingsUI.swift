@@ -61,6 +61,7 @@ struct ContextConfig: Codable {
     var imeContext: ImeContextConfig = .init()
     var advanced: AdvancedConfig = .init()
     var shortcut: ShortcutConfig = .init()
+    var feedback: FeedbackConfig = .init()
 
     enum CodingKeys: String, CodingKey {
         case version
@@ -71,6 +72,7 @@ struct ContextConfig: Codable {
         case imeContext = "ime_context"
         case advanced
         case shortcut
+        case feedback
     }
 
     init() {}
@@ -85,6 +87,7 @@ struct ContextConfig: Codable {
         imeContext = try c.decodeIfPresent(ImeContextConfig.self, forKey: .imeContext) ?? .init()
         advanced = try c.decodeIfPresent(AdvancedConfig.self, forKey: .advanced) ?? .init()
         shortcut = try c.decodeIfPresent(ShortcutConfig.self, forKey: .shortcut) ?? .init()
+        feedback = try c.decodeIfPresent(FeedbackConfig.self, forKey: .feedback) ?? .init()
     }
 }
 
@@ -98,6 +101,24 @@ struct ShortcutConfig: Codable {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         key = try c.decodeIfPresent(String.self, forKey: .key) ?? "right_command"
         mode = try c.decodeIfPresent(String.self, forKey: .mode) ?? "hold"
+    }
+}
+
+struct FeedbackConfig: Codable {
+    var startSound: String = defaultFeedbackStartSoundName
+    var stopSound: String = defaultFeedbackStopSoundName
+
+    enum CodingKeys: String, CodingKey {
+        case startSound = "start_sound"
+        case stopSound = "stop_sound"
+    }
+
+    init() {}
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        startSound = try c.decodeIfPresent(String.self, forKey: .startSound) ?? defaultFeedbackStartSoundName
+        stopSound = try c.decodeIfPresent(String.self, forKey: .stopSound) ?? defaultFeedbackStopSoundName
     }
 }
 
@@ -343,6 +364,7 @@ private final class SettingsStore: ObservableObject {
 
 private struct TriggerInteractionSettingsView: View {
     @Binding var config: ContextConfig
+    private let feedbackSoundOptions = availableFeedbackSoundOptions()
 
     var body: some View {
         Form {
@@ -355,6 +377,20 @@ private struct TriggerInteractionSettingsView: View {
 
                 Picker("触发模式", selection: $config.shortcut.mode) {
                     ForEach(shortcutModeOptions) { opt in
+                        Text(opt.label).tag(opt.value)
+                    }
+                }
+            }
+
+            Section("提示音") {
+                Picker("开始录音", selection: $config.feedback.startSound) {
+                    ForEach(feedbackSoundOptions) { opt in
+                        Text(opt.label).tag(opt.value)
+                    }
+                }
+
+                Picker("结束录音", selection: $config.feedback.stopSound) {
+                    ForEach(feedbackSoundOptions) { opt in
                         Text(opt.label).tag(opt.value)
                     }
                 }

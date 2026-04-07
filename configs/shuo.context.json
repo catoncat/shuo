@@ -8,6 +8,10 @@
     "strong_ddc" : true,
     "use_user_dictionary" : true
   },
+  "feedback" : {
+    "start_sound" : "jbl_begin_short.caf",
+    "stop_sound" : "Pop.aiff"
+  },
   "hotwords" : [
 
   ],
@@ -19,7 +23,7 @@
     "enable_speech_rejection" : true
   },
   "shortcut" : {
-    "key" : "right_command",
+    "key" : "right_option",
     "mode" : "hold"
   },
   "text_context" : {

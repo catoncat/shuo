@@ -33,5 +33,9 @@
   "shortcut": {
     "key": "right_command",
     "mode": "hold"
+  },
+  "feedback": {
+    "start_sound": "jbl_begin_short.caf",
+    "stop_sound": "Pop.aiff"
   }
 }

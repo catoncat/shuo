@@ -2,7 +2,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-RAW_TAG="${1:-${GITHUB_REF_NAME:-v0.1.0}}"
+RAW_TAG="${1:-${GITHUB_REF_NAME:-v0.1.1}}"
 TAG="${RAW_TAG#refs/tags/}"
 if [[ "$TAG" != v* ]]; then
     TAG="v$TAG"

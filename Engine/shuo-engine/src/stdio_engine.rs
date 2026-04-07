@@ -319,7 +319,11 @@ impl StdioEngine {
                     preview_session_id,
                     None,
                     DEFAULT_APP_KEY,
-                    "pcm",
+                    if self.args.frontier_profile.uses_opus() {
+                        "speech_opus"
+                    } else {
+                        "pcm"
+                    },
                     Some(&effective_request_profile),
                     None,
                     preview_now_ms / 1000,

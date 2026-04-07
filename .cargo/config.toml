@@ -1,0 +1,2 @@
+[env]
+PKG_CONFIG = { value = "Engine/shuo-engine/scripts/pkg-config-opus.sh", relative = true }

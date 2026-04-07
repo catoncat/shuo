@@ -1,6 +1,8 @@
 use clap::Parser;
 
 mod audio;
+#[cfg(feature = "latency-bench")]
+mod benchmark;
 mod config;
 mod engine_ipc;
 mod engine_state;
@@ -10,6 +12,16 @@ mod frontier_protocol;
 mod legacy_transport;
 mod state;
 mod stdio_engine;
+
+#[cfg(not(feature = "latency-bench"))]
+mod benchmark {
+    use crate::Args;
+
+    pub(crate) fn run_benchmark_replay(_args: Args) {
+        eprintln!("benchmark mode requires cargo feature: latency-bench");
+        std::process::exit(2);
+    }
+}
 
 use clap::ValueEnum;
 use stdio_engine::run_stdio_engine;
@@ -29,6 +41,9 @@ struct Args {
 
     #[arg(long, value_enum, default_value_t = TransportKind::DirectFrontier)]
     transport: TransportKind,
+
+    #[arg(long, value_enum, default_value_t = FrontierProfile::CurrentOpus)]
+    frontier_profile: FrontierProfile,
 
     #[arg(long, default_value = "ws://127.0.0.1:8765")]
     server_url: String,
@@ -75,11 +90,24 @@ struct Args {
 
     #[arg(long, default_value_t = 1.0, hide = true)]
     ui_scale: f64,
+
+    #[arg(long)]
+    benchmark_input_wav: Option<String>,
+
+    #[arg(long, default_value_t = 20)]
+    benchmark_chunk_ms: u64,
+
+    #[arg(long, default_value_t = true)]
+    benchmark_warmup: bool,
+
+    #[arg(long, default_value_t = 10.0)]
+    benchmark_timeout_secs: f64,
 }
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq, ValueEnum)]
 enum RunMode {
     StdioEngine,
+    BenchmarkReplay,
 }
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq, ValueEnum)]
@@ -97,7 +125,39 @@ impl TransportKind {
     }
 }
 
+#[derive(Copy, Clone, Debug, Eq, PartialEq, ValueEnum)]
+pub(crate) enum FrontierProfile {
+    CurrentPcm,
+    CurrentOpus,
+    AndroidPcm,
+    AndroidOpus,
+}
+
+impl FrontierProfile {
+    #[cfg(feature = "latency-bench")]
+    pub(crate) fn as_str(self) -> &'static str {
+        match self {
+            Self::CurrentPcm => "current_pcm",
+            Self::CurrentOpus => "current_opus",
+            Self::AndroidPcm => "android_pcm",
+            Self::AndroidOpus => "android_opus",
+        }
+    }
+
+    pub(crate) fn uses_opus(self) -> bool {
+        matches!(self, Self::CurrentOpus | Self::AndroidOpus)
+    }
+
+    #[cfg(feature = "latency-bench")]
+    pub(crate) fn uses_android_payload(self) -> bool {
+        matches!(self, Self::AndroidPcm | Self::AndroidOpus)
+    }
+}
+
 fn main() {
     let args = Args::parse();
-    run_stdio_engine(args);
+    match args.mode {
+        RunMode::StdioEngine => run_stdio_engine(args),
+        RunMode::BenchmarkReplay => benchmark::run_benchmark_replay(args),
+    }
 }

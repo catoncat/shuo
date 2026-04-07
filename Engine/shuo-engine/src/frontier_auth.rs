@@ -15,6 +15,8 @@ use uuid::Uuid;
 use crate::frontier_protocol::{DEFAULT_APP_KEY, DEFAULT_FRONTIER_WS_URL};
 use crate::state::now_millis;
 use crate::Args;
+#[cfg(feature = "latency-bench")]
+use crate::FrontierProfile;
 
 const MIN_USABLE_TTL_SECS: u64 = 300;
 const ANDROID_REGISTER_URL: &str = "https://log.snssdk.com/service/2/device_register/";
@@ -81,6 +83,34 @@ pub(crate) fn resolve_frontier_auth(args: &Args) -> Result<FrontierAuthMaterial,
 
 pub(crate) fn refresh_frontier_auth(args: &Args) -> Result<FrontierAuthMaterial, String> {
     resolve_frontier_auth_impl(args, AuthResolveMode::ForceRefresh, true)
+}
+
+#[cfg(feature = "latency-bench")]
+pub(crate) fn resolve_frontier_auth_for_profile(
+    args: &Args,
+    profile: FrontierProfile,
+) -> Result<FrontierAuthMaterial, String> {
+    if !profile.uses_android_payload() {
+        return resolve_frontier_auth(args);
+    }
+
+    if let Some(auth) = explicit_auth(args) {
+        persist_resolved_auth_artifacts(args, &auth);
+        return Ok(auth);
+    }
+
+    if let Some(auth) = resolve_android_profile_cached_auth(args) {
+        return Ok(auth);
+    }
+
+    if !args.disable_android_vdevice_auth {
+        if let Some(auth) = resolve_android_virtual_device_auth(args, true) {
+            persist_frontier_auth_cache(auth_cache_path(args).as_deref(), &auth);
+            return Ok(auth);
+        }
+    }
+
+    Err("no valid android frontier auth available".to_string())
 }
 
 pub(crate) fn preview_frontier_auth(args: &Args) -> Value {
@@ -427,6 +457,35 @@ fn resolve_desktop_session_auth(args: &Args) -> Option<FrontierAuthMaterial> {
         }
     }
     None
+}
+
+#[cfg(feature = "latency-bench")]
+fn resolve_android_profile_cached_auth(args: &Args) -> Option<FrontierAuthMaterial> {
+    for path in desktop_session_candidates(args, None) {
+        if let Some(auth) = load_desktop_session_env(&path, args.frontier_app_key.clone()) {
+            if auth_looks_android(&auth) {
+                return Some(auth);
+            }
+        }
+    }
+    if let Some(path) = auth_cache_path(args).as_deref() {
+        if let Some(auth) = load_frontier_auth_cache(path) {
+            if auth_looks_android(&auth) {
+                return Some(auth);
+            }
+        }
+    }
+    None
+}
+
+#[cfg(feature = "latency-bench")]
+fn auth_looks_android(auth: &FrontierAuthMaterial) -> bool {
+    auth.source.starts_with("android_virtual_device:")
+        || auth
+            .ws_url
+            .as_deref()
+            .map(|url| url.contains("aid=401734"))
+            .unwrap_or(false)
 }
 
 fn desktop_session_candidates(args: &Args, root_override: Option<&Path>) -> Vec<PathBuf> {
@@ -997,7 +1056,7 @@ impl ExpandUserLike for PathBuf {
 mod tests {
     use super::{decode_jwt_exp, desktop_session_candidates, load_desktop_session_env, load_frontier_auth_cache, persist_desktop_session_env, persist_frontier_auth_cache, refresh_frontier_auth, resolve_frontier_auth, usable_token, AuthResolveMode, FrontierAuthMaterial};
     use crate::frontier_protocol::DEFAULT_FRONTIER_WS_URL;
-    use crate::{Args, RunMode, TransportKind};
+    use crate::{Args, FrontierProfile, RunMode, TransportKind};
     use std::fs;
     use std::path::PathBuf;
 
@@ -1009,6 +1068,7 @@ mod tests {
         Args {
             mode: RunMode::StdioEngine,
             transport: TransportKind::DirectFrontier,
+            frontier_profile: FrontierProfile::CurrentPcm,
             server_url: "ws://127.0.0.1:8765".to_string(),
             frontier_token: None,
             frontier_app_key: None,
@@ -1028,6 +1088,10 @@ mod tests {
             type_partial: false,
             subtitle_overlay: false,
             ui_scale: 1.0,
+            benchmark_input_wav: None,
+            benchmark_chunk_ms: 20,
+            benchmark_warmup: true,
+            benchmark_timeout_secs: 10.0,
         }
     }
 

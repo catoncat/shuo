@@ -114,6 +114,9 @@ struct Main {
         case "engine-refresh-auth":
             try runEngineRefreshAuth(options: EngineRefreshAuthOptions.parse(Array(args.dropFirst())))
 
+        case "latency-bench":
+            try runLatencyBench(options: LatencyBenchOptions.parse(Array(args.dropFirst())))
+
         case "app":
             runMenuBarApp(options: try AppOptions.parse(Array(args.dropFirst())))
 

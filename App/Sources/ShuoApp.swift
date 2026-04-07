@@ -2,8 +2,6 @@ import AppKit
 import Carbon
 import Foundation
 
-private let systemSfxBegin = "jbl_begin_short.caf"
-private let systemSfxConfirm = "jbl_confirm.caf"
 private var activeFeedbackSounds: [NSSound] = []
 
 struct AppOptions {
@@ -230,29 +228,33 @@ private func shortcutSignalName(_ signal: ShortcutSignal) -> String {
     }
 }
 
-private func bundledSoundURL(_ fileName: String) -> URL? {
-    let fileManager = FileManager.default
-    let candidates: [URL?] = [
-        Bundle.main.resourceURL?.appendingPathComponent("sounds/\(fileName)"),
-        URL(fileURLWithPath: fileManager.currentDirectoryPath).appendingPathComponent("App/Resources/sounds/\(fileName)"),
-        URL(fileURLWithPath: "/System/Library/Components/CoreAudio.component/Contents/SharedSupport/SystemSounds/siri").appendingPathComponent(fileName),
-    ]
-    for candidate in candidates.compactMap({ $0 }) {
-        if fileManager.fileExists(atPath: candidate.path) {
-            return candidate
-        }
-    }
-    return nil
-}
-
 private func playSystemFeedback(_ fileName: String) {
-    guard let url = bundledSoundURL(fileName),
+    guard let url = resolveFeedbackSoundURL(fileName),
           let sound = NSSound(contentsOf: url, byReference: false) else {
         return
     }
     activeFeedbackSounds.removeAll { !$0.isPlaying }
     activeFeedbackSounds.append(sound)
     sound.play()
+}
+
+private enum FeedbackMoment {
+    case start
+    case stop
+}
+
+private func configuredFeedbackSoundName(for moment: FeedbackMoment) -> String {
+    let feedback = loadContextConfigFromDisk().feedback
+    switch moment {
+    case .start:
+        return feedback.startSound
+    case .stop:
+        return feedback.stopSound
+    }
+}
+
+private func playConfiguredFeedback(_ moment: FeedbackMoment) {
+    playSystemFeedback(configuredFeedbackSoundName(for: moment))
 }
 
 private final class ModifierShortcutMonitor {
@@ -385,6 +387,14 @@ private final class AppEngineController {
     func warmup(with context: EngineContextSnapshot, force: Bool = false) {
         queue.async {
             guard let bridge = self.bridge, bridge.isRunning else { return }
+            if !force && (self.activeSessionID != nil || self.snapshot.isRecording) {
+                var fields = runtimeTimelineContextFields(context)
+                fields["force"] = force
+                fields["active_session_id"] = self.activeSessionID ?? ""
+                fields["reason"] = self.snapshot.isRecording ? "recording" : "active_session"
+                RuntimeTimeline.shared.record("host", "warmup_skipped", fields: fields)
+                return
+            }
             var fields = runtimeTimelineContextFields(context)
             fields["force"] = force
             fields["active_session_id"] = self.activeSessionID ?? ""
@@ -397,7 +407,7 @@ private final class AppEngineController {
     func startRecording(with context: EngineContextSnapshot, trigger: String) {
         queue.async {
             guard let bridge = self.bridge, bridge.isRunning else { return }
-            let sessionId = "shuo-\(UUID().uuidString.lowercased())"
+            let sessionId = "shuo-app-\(UUID().uuidString.lowercased())"
             self.activeSessionID = sessionId
             var fields = runtimeTimelineContextFields(context)
             fields["session_id"] = sessionId
@@ -729,7 +739,7 @@ private final class ShuoAppDelegate: NSObject, NSApplicationDelegate {
         }
         engine.onRecordingStarted = { [weak self] in
             RuntimeTimeline.shared.record("ui", "recording_started_callback")
-            playSystemFeedback(systemSfxBegin)
+            playConfiguredFeedback(.start)
             self?.overlay.showWaveformOnly()
         }
         engine.onRecordingStopped = { [weak self] reason in
@@ -738,7 +748,7 @@ private final class ShuoAppDelegate: NSObject, NSApplicationDelegate {
                 "reason": reason,
             ])
             if reason != "cancelled" {
-                playSystemFeedback(systemSfxConfirm)
+                playConfiguredFeedback(.stop)
             }
             if reason != "flush_pending" {
                 self.overlay.hide()
@@ -840,10 +850,10 @@ private final class ShuoAppDelegate: NSObject, NSApplicationDelegate {
         } else {
             startPermissionPolling()
         }
-        if snapshot.helperState != "ready" {
+        if snapshot.helperState != "ready" && !snapshot.isRecording {
             didRequestInitialWarmup = false
         }
-        if snapshot.helperState == "ready" && !didRequestInitialWarmup {
+        if snapshot.helperState == "ready" && !snapshot.isRecording && !didRequestInitialWarmup {
             didRequestInitialWarmup = true
             engine.warmup(with: currentContextSnapshot())
         }
@@ -900,6 +910,7 @@ private final class ShuoAppDelegate: NSObject, NSApplicationDelegate {
         ])
         switch signal {
         case .press:
+            didRequestInitialWarmup = true
             startRecording()
         case .release:
             stopRecording()
@@ -907,17 +918,27 @@ private final class ShuoAppDelegate: NSObject, NSApplicationDelegate {
             if latestSnapshot.isRecording {
                 stopRecording()
             } else {
+                didRequestInitialWarmup = true
                 startRecording()
             }
         case .warmupHint:
-            warmup()
+            if !latestSnapshot.isRecording {
+                warmup()
+            }
         }
     }
 
     private func rewarmIfNeeded() {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) { [weak self] in
+            guard let self else { return }
+            if self.latestSnapshot.isRecording {
+                RuntimeTimeline.shared.record("host", "rewarm_skipped", fields: [
+                    "reason": "recording",
+                ])
+                return
+            }
             RuntimeTimeline.shared.record("host", "rewarm_scheduled")
-            self?.engine.warmup(with: currentContextSnapshot())
+            self.engine.warmup(with: currentContextSnapshot())
         }
     }
 

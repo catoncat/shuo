@@ -1,13 +1,19 @@
 [package]
 name = "shuo-engine"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
+
+[features]
+default = []
+latency-bench = ["dep:hound"]
 
 [dependencies]
 base64 = "0.22"
+audiopus = "0.2"
 block2 = "0.6.2"
 clap = { version = "4", features = ["derive"] }
 futures-util = "0.3"
+hound = { version = "3.5", optional = true }
 http = "1"
 md5 = "0.7"
 objc2 = "0.6.4"

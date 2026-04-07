@@ -23,6 +23,10 @@
   "ime_context": {
     "input_type": "default"
   },
+  "feedback": {
+    "start_sound": "jbl_begin_short.caf",
+    "stop_sound": "Pop.aiff"
+  },
   "advanced": {
     "use_user_dictionary": true,
     "enable_text_filter": true,

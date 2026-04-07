@@ -1140,6 +1140,7 @@ func resolveEngineLauncher(
     var helperArguments = [
         "--mode", "stdio-engine",
         "--transport", transport,
+        "--frontier-profile", "current-opus",
         "--server-url", serverURL,
         "--partial-interval-ms", String(partialIntervalMs),
     ]

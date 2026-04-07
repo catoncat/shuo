@@ -3,7 +3,7 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 APP_NAME="Shuo"
-APP_VERSION="${SHUO_VERSION:-0.1.0}"
+APP_VERSION="${SHUO_VERSION:-0.1.1}"
 BUILD_NUMBER="${SHUO_BUILD_NUMBER:-1}"
 APP_BUNDLE="$ROOT/dist/${APP_NAME}.app"
 CONTENTS="$APP_BUNDLE/Contents"

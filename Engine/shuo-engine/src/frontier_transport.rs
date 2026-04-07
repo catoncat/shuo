@@ -4,6 +4,8 @@ use std::thread;
 use std::time::Duration;
 use std::{cmp::Reverse, collections::BTreeMap};
 
+use audiopus::coder::Encoder as OpusEncoder;
+use audiopus::{Application, Channels, SampleRate};
 use futures_util::{SinkExt, StreamExt};
 use http::{header::HeaderName, HeaderValue, Request};
 use serde_json::Value;
@@ -26,13 +28,15 @@ use crate::frontier_protocol::{
 };
 use crate::legacy_transport::{LegacyTransportCommand, LegacyTransportEvent};
 use crate::state::now_millis;
-use crate::Args;
+use crate::{Args, FrontierProfile};
 
 const CONNECT_READY_TIMEOUT: Duration = Duration::from_secs(2);
 const FINAL_TIMEOUT: Duration = Duration::from_secs(6);
 const SAMPLE_RATE: usize = 16_000;
 const SAMPLE_WIDTH: usize = 2;
-const PCM_CHUNK_BYTES: usize = 320 * SAMPLE_WIDTH;
+const FRAME_MS: u64 = 20;
+const FRAME_SAMPLES: usize = (SAMPLE_RATE as u64 * FRAME_MS / 1000) as usize;
+const PCM_CHUNK_BYTES: usize = FRAME_SAMPLES * SAMPLE_WIDTH;
 const DEFAULT_DEVICE_KEY: &str = "4285264416738169+W";
 
 type WsWrite = futures_util::stream::SplitSink<WebSocketStream<MaybeTlsStream<TcpStream>>, Message>;
@@ -45,6 +49,9 @@ struct FrontierSharedState {
     error: Option<String>,
     terminal: bool,
     finish_done_at_ms: Option<u64>,
+    first_result_frame_at_ms: Option<u64>,
+    first_partial_frame_at_ms: Option<u64>,
+    first_final_frame_at_ms: Option<u64>,
 }
 
 struct FrontierSession {
@@ -60,6 +67,8 @@ struct FrontierSession {
     finish_sent_at_ms: Option<u64>,
     audio_bytes_sent: usize,
     pending_pcm: Vec<u8>,
+    frontier_profile: FrontierProfile,
+    opus_encoder: Option<OpusEncoder>,
 }
 
 struct FrontierRuntime {
@@ -68,6 +77,19 @@ struct FrontierRuntime {
     context_config: ContextConfig,
     runtime_context: Option<FrontierRuntimeContext>,
     session: Option<FrontierSession>,
+}
+
+fn runtime_audio_format(profile: FrontierProfile) -> &'static str {
+    if profile.uses_opus() {
+        "speech_opus"
+    } else {
+        "pcm"
+    }
+}
+
+fn build_runtime_opus_encoder() -> Result<OpusEncoder, String> {
+    OpusEncoder::new(SampleRate::Hz16000, Channels::Mono, Application::Audio)
+        .map_err(|error| format!("opus encoder init failed: {error}"))
 }
 
 pub(crate) fn spawn_frontier_transport(
@@ -335,6 +357,7 @@ impl FrontierRuntime {
         }
 
         self.close_session().await;
+        let profile = self.args.frontier_profile;
         let auth = if force_refresh {
             refresh_frontier_auth(&self.args)?
         } else {
@@ -437,7 +460,7 @@ impl FrontierRuntime {
             &frontier_session_id,
             auth.request_token_field(),
             &auth.app_key,
-            "pcm",
+            runtime_audio_format(profile),
             Some(&request_profile),
             None,
             now_millis() / 1000,
@@ -461,6 +484,12 @@ impl FrontierRuntime {
             finish_sent_at_ms: None,
             audio_bytes_sent: 0,
             pending_pcm: Vec::new(),
+            frontier_profile: profile,
+            opus_encoder: if profile.uses_opus() {
+                Some(build_runtime_opus_encoder()?)
+            } else {
+                None
+            },
         });
 
         Ok(self.session.as_mut().expect("session inserted"))
@@ -476,12 +505,14 @@ impl FrontierRuntime {
             session.pending_pcm.extend_from_slice(&sample.to_le_bytes());
         }
 
-        let flush_eagerly = session.audio_bytes_sent == 0;
         while session.pending_pcm.len() >= PCM_CHUNK_BYTES {
             let chunk = session.pending_pcm.drain(..PCM_CHUNK_BYTES).collect::<Vec<_>>();
             send_audio_chunk(session, &chunk).await?;
         }
-        if flush_eagerly && !session.pending_pcm.is_empty() {
+        if !session.frontier_profile.uses_opus()
+            && session.audio_bytes_sent == 0
+            && !session.pending_pcm.is_empty()
+        {
             let chunk = session.pending_pcm.drain(..).collect::<Vec<_>>();
             send_audio_chunk(session, &chunk).await?;
         }
@@ -508,7 +539,13 @@ impl FrontierRuntime {
         };
 
         if !session.pending_pcm.is_empty() {
-            let chunk = session.pending_pcm.drain(..).collect::<Vec<_>>();
+            let chunk = if session.frontier_profile.uses_opus() {
+                let mut padded = session.pending_pcm.drain(..).collect::<Vec<_>>();
+                padded.resize(PCM_CHUNK_BYTES, 0);
+                padded
+            } else {
+                session.pending_pcm.drain(..).collect::<Vec<_>>()
+            };
             send_audio_chunk(&mut session, &chunk).await?;
         }
 
@@ -606,12 +643,21 @@ fn build_frontier_request(
 }
 
 async fn send_audio_chunk(session: &mut FrontierSession, chunk: &[u8]) -> Result<(), String> {
-    let payload = build_audio_frame(
-        &session.frontier_session_id,
-        chunk,
-        now_millis(),
-        0,
-    );
+    let payload = if session.frontier_profile.uses_opus() {
+        let pcm = bytes_to_i16_samples(chunk)?;
+        let encoder = session
+            .opus_encoder
+            .as_mut()
+            .ok_or_else(|| "opus encoder missing".to_string())?;
+        let mut encoded = vec![0u8; 4000];
+        let size = encoder
+            .encode(&pcm, &mut encoded)
+            .map_err(|error| format!("opus encode failed: {error}"))?;
+        encoded.truncate(size);
+        build_audio_frame(&session.frontier_session_id, &encoded, now_millis(), 0)
+    } else {
+        build_audio_frame(&session.frontier_session_id, chunk, now_millis(), 0)
+    };
     session
         .writer
         .send(Message::Binary(payload.into()))
@@ -619,6 +665,17 @@ async fn send_audio_chunk(session: &mut FrontierSession, chunk: &[u8]) -> Result
         .map_err(|error| format!("frontier audio send failed: {error}"))?;
     session.audio_bytes_sent += chunk.len();
     Ok(())
+}
+
+fn bytes_to_i16_samples(chunk: &[u8]) -> Result<Vec<i16>, String> {
+    if !chunk.len().is_multiple_of(2) {
+        return Err("pcm chunk length must be even".to_string());
+    }
+    let mut samples = Vec::with_capacity(chunk.len() / 2);
+    for bytes in chunk.chunks_exact(2) {
+        samples.push(i16::from_le_bytes([bytes[0], bytes[1]]));
+    }
+    Ok(samples)
 }
 
 async fn close_frontier_session(mut session: FrontierSession) {
@@ -714,19 +771,29 @@ async fn handle_frontier_response(
     let Some(payload) = parsed.payload_json else {
         return;
     };
+    let response_received_at_ms = now_millis();
     let (partial_text, final_text, saw_terminal) = extract_latest_result(&payload);
     let mut shared = shared.lock().await;
+    if shared.first_result_frame_at_ms.is_none() {
+        shared.first_result_frame_at_ms = Some(response_received_at_ms);
+    }
     if !partial_text.is_empty() {
+        if shared.first_partial_frame_at_ms.is_none() {
+            shared.first_partial_frame_at_ms = Some(response_received_at_ms);
+        }
         shared.latest_partial_text = partial_text.clone();
     }
     if !final_text.is_empty() {
+        if shared.first_final_frame_at_ms.is_none() {
+            shared.first_final_frame_at_ms = Some(response_received_at_ms);
+        }
         shared.latest_final_text = final_text.clone();
         shared.latest_partial_text = shared.latest_final_text.clone();
-        shared.finish_done_at_ms = Some(now_millis());
+        shared.finish_done_at_ms = Some(response_received_at_ms);
     }
     if saw_terminal {
         shared.terminal = true;
-        shared.finish_done_at_ms = Some(now_millis());
+        shared.finish_done_at_ms = Some(response_received_at_ms);
     }
     drop(shared);
     if !partial_text.is_empty() {
@@ -1031,7 +1098,12 @@ async fn snapshot_timings(
     total_ms: u64,
     extra_audio_bytes: usize,
 ) -> Value {
-    let ready_at_ms = session.shared.lock().await.ready_at_ms.unwrap_or(0);
+    let shared = session.shared.lock().await;
+    let ready_at_ms = shared.ready_at_ms.unwrap_or(0);
+    let first_result_frame_at_ms = shared.first_result_frame_at_ms;
+    let first_partial_frame_at_ms = shared.first_partial_frame_at_ms;
+    let first_final_frame_at_ms = shared.first_final_frame_at_ms;
+    drop(shared);
     serde_json::json!({
         "audio_ms": audio_ms_from_bytes(session.audio_bytes_sent + extra_audio_bytes),
         "warmup_ms": ready_at_ms.saturating_sub(session.connect_started_at_ms),
@@ -1039,6 +1111,9 @@ async fn snapshot_timings(
         "context_capture_ms": session.runtime_context.capture_ms,
         "context_available": effective_context_available(&session.runtime_context, &session.context_config),
         "context_source": effective_context_source(&session.runtime_context, &session.context_config),
+        "first_result_frame_ms": first_result_frame_at_ms.map(|ts| ts.saturating_sub(session.connect_started_at_ms)),
+        "first_partial_frame_ms": first_partial_frame_at_ms.map(|ts| ts.saturating_sub(session.connect_started_at_ms)),
+        "first_final_frame_ms": first_final_frame_at_ms.map(|ts| ts.saturating_sub(session.connect_started_at_ms)),
         "total_ms": total_ms,
         "provider": "doubao-frontier-direct",
     })
