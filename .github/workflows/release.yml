@@ -23,6 +23,11 @@ jobs:
 
       - uses: dtolnay/rust-toolchain@stable
 
+      - name: Install release build dependencies
+        shell: bash
+        run: |
+          brew install opus pkg-config
+
       - name: Resolve release metadata
         shell: bash
         run: |
