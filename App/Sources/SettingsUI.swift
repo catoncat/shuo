@@ -1,6 +1,7 @@
 import AppKit
 import Foundation
 import SwiftUI
+import UniformTypeIdentifiers
 
 private struct SettingsOption: Identifiable {
     let label: String
@@ -364,7 +365,22 @@ private final class SettingsStore: ObservableObject {
 
 private struct TriggerInteractionSettingsView: View {
     @Binding var config: ContextConfig
-    private let feedbackSoundOptions = availableFeedbackSoundOptions()
+
+    private var feedbackSoundOptions: [FeedbackSoundOption] {
+        availableFeedbackSoundOptions(including: [config.feedback.startSound, config.feedback.stopSound])
+    }
+
+    private func chooseFeedbackSound(_ selection: Binding<String>) {
+        let panel = NSOpenPanel()
+        panel.title = "选择提示音"
+        panel.canChooseFiles = true
+        panel.canChooseDirectories = false
+        panel.allowsMultipleSelection = false
+        panel.allowedContentTypes = feedbackSoundAllowedFileExtensions().compactMap { UTType(filenameExtension: $0) }
+        if panel.runModal() == .OK, let url = panel.url {
+            selection.wrappedValue = url.path
+        }
+    }
 
     var body: some View {
         Form {
@@ -383,16 +399,34 @@ private struct TriggerInteractionSettingsView: View {
             }
 
             Section("提示音") {
-                Picker("开始录音", selection: $config.feedback.startSound) {
-                    ForEach(feedbackSoundOptions) { opt in
-                        Text(opt.label).tag(opt.value)
+                HStack {
+                    Picker("开始录音", selection: $config.feedback.startSound) {
+                        ForEach(feedbackSoundOptions) { opt in
+                            Text(opt.label).tag(opt.value)
+                        }
                     }
+                    Button {
+                        chooseFeedbackSound($config.feedback.startSound)
+                    } label: {
+                        Image(systemName: "folder.badge.plus")
+                    }
+                    .buttonStyle(.borderless)
+                    .help("选择自定义开始提示音")
                 }
 
-                Picker("结束录音", selection: $config.feedback.stopSound) {
-                    ForEach(feedbackSoundOptions) { opt in
-                        Text(opt.label).tag(opt.value)
+                HStack {
+                    Picker("结束录音", selection: $config.feedback.stopSound) {
+                        ForEach(feedbackSoundOptions) { opt in
+                            Text(opt.label).tag(opt.value)
+                        }
                     }
+                    Button {
+                        chooseFeedbackSound($config.feedback.stopSound)
+                    } label: {
+                        Image(systemName: "folder.badge.plus")
+                    }
+                    .buttonStyle(.borderless)
+                    .help("选择自定义结束提示音")
                 }
             }
         }

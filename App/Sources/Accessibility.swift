@@ -1,5 +1,6 @@
 import AppKit
 import ApplicationServices
+import Carbon
 import Foundation
 
 struct FocusedInjectionTarget {
@@ -11,6 +12,36 @@ private struct PasteboardEntry {
     let data: Data?
     let string: String?
 }
+
+private let pasteboardRestoreDelayMs = 400
+
+private final class PasteboardRestoreCoordinator {
+    private let lock = NSLock()
+    private var generation = 0
+    private var originalSnapshot: [[PasteboardEntry]]?
+
+    func begin(snapshot: [[PasteboardEntry]]) -> Int {
+        lock.lock()
+        defer { lock.unlock() }
+        generation += 1
+        if originalSnapshot == nil {
+            originalSnapshot = snapshot
+        }
+        return generation
+    }
+
+    func snapshotForRestore(token: Int, currentChangeCount: Int, expectedChangeCount: Int) -> [[PasteboardEntry]]? {
+        lock.lock()
+        defer { lock.unlock() }
+        guard token == generation else { return nil }
+        let snapshot = originalSnapshot
+        originalSnapshot = nil
+        guard currentChangeCount == expectedChangeCount else { return nil }
+        return snapshot
+    }
+}
+
+private let pasteboardRestoreCoordinator = PasteboardRestoreCoordinator()
 
 func axCopyAttribute(_ element: AXUIElement, attribute: CFString) -> CFTypeRef? {
     var value: CFTypeRef?
@@ -78,6 +109,44 @@ func captureFocusedInjectionTarget() -> FocusedInjectionTarget? {
         return nil
     }
     return FocusedInjectionTarget(processIdentifier: frontmost.processIdentifier)
+}
+
+private func currentInputSourceID() -> String? {
+    guard let source = TISCopyCurrentKeyboardInputSource()?.takeRetainedValue() else { return nil }
+    return inputSourceString(source, key: kTISPropertyInputSourceID)
+}
+
+private func switchToASCIIInputSource() -> Bool {
+    for id in ["com.apple.keylayout.ABC", "com.apple.keylayout.US"] {
+        if let source = findInputSource(matcher: id, inputModeId: nil) {
+            if inputSourceBool(source, key: kTISPropertyInputSourceIsSelected) ?? false {
+                return false
+            }
+            let status = TISSelectInputSource(source)
+            if status == noErr {
+                usleep(50_000)
+                return true
+            }
+        }
+    }
+    if let source = allInputSources().first(where: {
+        (inputSourceString($0, key: kTISPropertyInputSourceID) ?? "").hasPrefix("com.apple.keylayout.")
+    }) {
+        if inputSourceBool(source, key: kTISPropertyInputSourceIsSelected) ?? false {
+            return false
+        }
+        let status = TISSelectInputSource(source)
+        usleep(50_000)
+        return status == noErr
+    }
+    return false
+}
+
+private func restoreInputSource(_ id: String?) -> Bool {
+    guard let id, let source = findInputSource(matcher: id, inputModeId: nil) else { return false }
+    let status = TISSelectInputSource(source)
+    usleep(50_000)
+    return status == noErr
 }
 
 func focusedTextContext(maxChars: Int) -> FocusedTextContext {
@@ -178,8 +247,16 @@ func insertTextIntoFocusedElement(_ text: String, target: FocusedInjectionTarget
         return false
     }
 
-    if pasteOrTypeText(text, expectedPID: target?.processIdentifier) {
-        return true
+    if target == nil || target?.processIdentifier == NSWorkspace.shared.frontmostApplication?.processIdentifier {
+        let previousInputSource = currentInputSourceID()
+        let switched = switchToASCIIInputSource()
+        let ok = pasteOrTypeText(text, expectedPID: target?.processIdentifier)
+        if switched {
+            _ = restoreInputSource(previousInputSource)
+        }
+        if ok {
+            return true
+        }
     }
 
     let appElement = AXUIElementCreateApplication(pid)
@@ -296,11 +373,20 @@ private func synthesizeKeyPress(keyCode: CGKeyCode, flags: CGEventFlags = []) ->
 private func pasteTextViaPasteboard(_ text: String) -> Bool {
     let pasteboard = NSPasteboard.general
     let snapshot = capturePasteboardSnapshot(pasteboard)
+    let restoreToken = pasteboardRestoreCoordinator.begin(snapshot: snapshot)
     pasteboard.clearContents()
-    pasteboard.setString(text, forType: .string)
+    let setOK = pasteboard.setString(text, forType: .string)
+    let expectedChangeCount = pasteboard.changeCount
     let posted = synthesizeKeyPress(keyCode: 9, flags: .maskCommand)
-    restorePasteboardSnapshot(pasteboard, snapshot: snapshot)
-    return posted
+    DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(pasteboardRestoreDelayMs)) {
+        guard let restoreSnapshot = pasteboardRestoreCoordinator.snapshotForRestore(
+            token: restoreToken,
+            currentChangeCount: pasteboard.changeCount,
+            expectedChangeCount: expectedChangeCount
+        ) else { return }
+        restorePasteboardSnapshot(pasteboard, snapshot: restoreSnapshot)
+    }
+    return posted && setOK
 }
 
 private func typeTextViaEvents(_ text: String) -> Bool {

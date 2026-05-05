@@ -9,7 +9,7 @@
     "use_user_dictionary" : true
   },
   "feedback" : {
-    "start_sound" : "jbl_begin_short.caf",
+    "start_sound" : "jbl_cancel.caf",
     "stop_sound" : "Pop.aiff"
   },
   "hotwords" : [

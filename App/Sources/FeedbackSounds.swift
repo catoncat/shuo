@@ -2,7 +2,7 @@ import Foundation
 
 let feedbackSoundOffValue = "off"
 let defaultFeedbackStartSoundName = "jbl_begin_short.caf"
-let defaultFeedbackStopSoundName = "Pop.aiff"
+let defaultFeedbackStopSoundName = "jbl_confirm.caf"
 
 struct FeedbackSoundOption: Identifiable, Hashable {
     let label: String
@@ -19,12 +19,25 @@ private let preferredFeedbackSoundOrder = [
     "jbl_cancel.caf",
 ]
 
+func feedbackSoundAllowedFileExtensions() -> [String] {
+    feedbackSoundExtensions.sorted()
+}
+
+private func appSupportFeedbackSoundDirectory() -> URL {
+    let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
+        ?? URL(fileURLWithPath: NSHomeDirectory()).appendingPathComponent("Library/Application Support")
+    return base
+        .appendingPathComponent("shuo", isDirectory: true)
+        .appendingPathComponent("sounds", isDirectory: true)
+}
+
 private func feedbackSoundSearchDirectories() -> [URL] {
     let fileManager = FileManager.default
     var directories: [URL] = []
     if let resourceURL = Bundle.main.resourceURL {
         directories.append(resourceURL.appendingPathComponent("sounds", isDirectory: true))
     }
+    directories.append(appSupportFeedbackSoundDirectory())
     directories.append(
         URL(fileURLWithPath: fileManager.currentDirectoryPath)
             .appendingPathComponent("App/Resources/sounds", isDirectory: true)
@@ -43,6 +56,10 @@ func resolveFeedbackSoundURL(_ fileName: String) -> URL? {
         return nil
     }
     let fileManager = FileManager.default
+    let directURL = URL(fileURLWithPath: NSString(string: fileName).expandingTildeInPath)
+    if fileManager.fileExists(atPath: directURL.path) {
+        return directURL
+    }
     for directory in feedbackSoundSearchDirectories() {
         let candidate = directory.appendingPathComponent(fileName)
         if fileManager.fileExists(atPath: candidate.path) {
@@ -67,7 +84,7 @@ private func feedbackSoundLabel(for fileName: String) -> String {
     }
 }
 
-func availableFeedbackSoundOptions() -> [FeedbackSoundOption] {
+func availableFeedbackSoundOptions(including selectedValues: [String] = []) -> [FeedbackSoundOption] {
     let fileManager = FileManager.default
     var seen = Set<String>()
     var orderedNames: [String] = []
@@ -81,6 +98,10 @@ func availableFeedbackSoundOptions() -> [FeedbackSoundOption] {
     }
 
     for fileName in preferredFeedbackSoundOrder {
+        append(fileName)
+    }
+
+    for fileName in selectedValues {
         append(fileName)
     }
 

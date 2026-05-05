@@ -25,7 +25,7 @@
   },
   "feedback": {
     "start_sound": "jbl_begin_short.caf",
-    "stop_sound": "Pop.aiff"
+    "stop_sound": "jbl_confirm.caf"
   },
   "advanced": {
     "use_user_dictionary": true,
