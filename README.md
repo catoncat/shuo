@@ -2,6 +2,22 @@
 
 Shuo 是一个 macOS 菜单栏语音转写 app。
 
+## 预览
+
+### 菜单栏
+
+![Shuo 菜单栏](docs/assets/readme/menu.png)
+
+### 设置
+
+![Shuo 设置页](docs/assets/readme/settings.png)
+
+### 使用演示
+
+![Shuo 使用演示](docs/assets/readme/demo.gif)
+
+[查看 MP4 演示视频](docs/assets/readme/demo.mp4)
+
 ## 安装
 
 - 下载：
